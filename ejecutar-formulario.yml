@@ -1,0 +1,50 @@
+name: Ejecutar Formulario Automáticamente
+
+on:
+  # Se ejecuta automáticamente cuando haces push a main
+  push:
+    branches: [ main, master ]
+  
+  # Permite ejecutarlo manualmente desde la interfaz de GitHub
+  workflow_dispatch:
+  
+  # Opcional: Programarlo para que se ejecute todos los días a las 9 AM
+  schedule:
+    - cron: '0 9 * * *'  # Ejecuta todos los días a las 9:00 AM UTC
+
+jobs:
+  llenar-formulario:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5  # Máximo 5 minutos de ejecución
+    
+    steps:
+    - name: 1. Clonar el repositorio
+      uses: actions/checkout@v4
+    
+    - name: 2. Configurar Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: 3. Instalar dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: 4. Instalar navegador Chromium para Playwright
+      run: |
+        python -m playwright install chromium
+        python -m playwright install-deps
+    
+    - name: 5. Ejecutar el script del formulario
+      run: python form_filler.py
+    
+    - name: 6. Subir logs y capturas (si las hay)
+      if: always()  # Esto se ejecuta aunque falle
+      uses: actions/upload-artifact@v4
+      with:
+        name: resultados-formulario
+        path: |
+          test-results/
+          playwright-report/
+        retention-days: 7  # Guarda los resultados por 7 días
